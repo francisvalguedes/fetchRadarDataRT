@@ -17,13 +17,13 @@ def dellfiles(file):
     return err
 
 
-limite_amostra = 0.015 # tempo ms
+limite_amostra = 0.015 # tempo s
 
-txt_files = glob.glob('data/*.csv')
+txt_files = glob.glob('input/*.csv')
 
 print(txt_files)
 
-dellfiles('out/*.csv')
+dellfiles('output/*.csv')
 
 for file_name in txt_files:
     df = pd.read_csv(file_name,
@@ -35,17 +35,28 @@ for file_name in txt_files:
     df["TU1d"]= pd.to_datetime("2024-06-09 " + df["TU1"], format="%Y-%m-%d %H:%M:%S") + pd.to_timedelta(df["TU2"].astype('int64'), unit='ms') + pd.to_timedelta(df["TU3"].astype('int64'), unit='us')
     df["TU1d_1"]=df["TU1d"].shift(1)
     df["sample"]=df["TU1d"] - df["TU1d_1"]
-
-    df_filtrado = df[df['sample'] > timedelta( seconds=0.015) ]
-    print("levou mais de ", limite_amostra, " ms nas seguintes amostras:")
-    print(df_filtrado)
+    
     df['sample_txt'] = df['sample'].astype('str')
     df['sample_txt'] = df['sample_txt'].str.split(' ', expand=True)[2]
     df['sample_txt'] = df['sample_txt'].str[7:]
     df['sample_txt'] = df['sample_txt'].str.replace('.',',')
-    df.to_csv('out' + os.path.sep + file_name.split(os.path.sep)[-1],
+
+    df.to_csv('output' + os.path.sep + file_name.split(os.path.sep)[-1],
           index=False,
           #date_format='%H:%M:%S,%f',
           decimal=',',
           sep=';'
           )
+    
+    df_filtrado = df[df['sample'] > timedelta( seconds=0.015) ]
+
+    if len(df_filtrado.index)>0:
+        print("levou mais de ", limite_amostra, " s nas seguintes amostras:")
+        print(df_filtrado)
+        
+        df_filtrado.to_csv('output' + os.path.sep + 'warning_' + file_name.split(os.path.sep)[-1],
+            index=False,
+            #date_format='%H:%M:%S,%f',
+            decimal=',',
+            sep=';'
+            )
